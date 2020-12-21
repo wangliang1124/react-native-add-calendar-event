@@ -1,20 +1,27 @@
 package com.vonovak;
 
 import android.app.Activity;
+import android.app.LoaderManager;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.app.LoaderManager;
-import android.content.Loader;
 import android.util.Log;
-import androidx.annotation.Nullable;
 
-import com.facebook.react.bridge.*;
+
+import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -144,6 +151,9 @@ public class AddCalendarEventModule extends ReactContextBaseJavaModule implement
 
     private void presentEventEditingActivity(ReadableMap config, Intent intent) {
         String eventIdString = config.getString("eventId");
+        long beginTime = config.hasKey("startTime") ? (long) config.getDouble("startTime") : 0;
+        long endTime = config.hasKey("endTime") ? (long) config.getDouble("endTime") : 0;
+
         if (!doesEventExist(getReactApplicationContext().getContentResolver(), eventIdString)) {
             rejectPromise("event with id " + eventIdString + " not found");
             return;
@@ -154,6 +164,14 @@ public class AddCalendarEventModule extends ReactContextBaseJavaModule implement
         setPriorEventId(getCurrentActivity());
 
         intent.setData(eventUri);
+
+        if (beginTime > 0) {
+            intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginTime);
+        }
+
+        if (endTime > 0) {
+            intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endTime);
+        }
 
         try {
             getReactApplicationContext().startActivityForResult(intent, SHOW_EVENT_REQUEST_CODE, Bundle.EMPTY);
